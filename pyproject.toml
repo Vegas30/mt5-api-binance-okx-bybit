@@ -1,0 +1,6 @@
+[project]
+name = "bybit-mt5-connector"
+version = "0.1.0"
+description = "Local MetaTrader 5 bridge and historical data exporter for Bybit V5"
+requires-python = ">=3.10"
+
