@@ -17,6 +17,10 @@ DistanceMode = DISTANCE_PERCENT
 DistancePercents = 1.0
 TakeProfit = 2.0
 StopLoss = 0.0
+UseTrailing = false
+TrailLevel = 1.0
+TrailMove = 0.5
+TrailStep = 0.25
 ```
 
 In tester the EA trades through native MT5 orders. This is intentional: MT5 Strategy Tester should not depend on live HTTP calls.
@@ -62,6 +66,14 @@ http://127.0.0.1:8765
 - `ExchangeCategory`: Bybit market category: `linear`, `spot`, or `inverse`.
 
 For consistent tests, run the tester on the same imported symbol that maps to `ExchangeSymbol`.
+
+## Trailing logic
+
+- `TrailLevel`: profit percent from average price before trailing can start.
+- `TrailMove`: distance from current price to trailing stop.
+- `TrailStep`: minimum improvement percent before the EA moves the stop again.
+
+In `EXECUTION_MT5_TRADE` the EA modifies MT5 SL only when `TrailStep` is passed. In `EXECUTION_BRIDGE` it does not spam exchange stop modifications: the stop is virtual inside MT5, and the EA sends one reduce-only market close to the connector only when price crosses the trailing stop.
 
 ## If tester trades 0.0000001 volume
 

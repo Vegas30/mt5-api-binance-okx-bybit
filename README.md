@@ -18,6 +18,80 @@
 python -m bybit_mt5.cli download --symbol BTCUSDT --category linear --interval 1 --start 2024-01-01 --end 2024-01-02 --out data\BTCUSDT_M1.csv
 ```
 
+## Подробно: скачивание исторических данных (`download`)
+
+Базовый синтаксис:
+
+```powershell
+python -m bybit_mt5.cli download --symbol <SYMBOL> --category <CATEGORY> --interval <INTERVAL> --start <START> --end <END> --out <FILE.csv> [--testnet]
+```
+
+Все параметры команды:
+
+1. `--symbol` (обязательный)  
+Торговая пара Bybit, обычно без разделителей, например: `BTCUSDT`, `ETHUSDT`, `SOLUSDT`.
+
+2. `--category` (необязательный, по умолчанию `linear`)  
+Тип рынка:
+- `spot` - спот
+- `linear` - USDT perpetual/фьючерсы
+- `inverse` - inverse контракты
+
+3. `--interval` (необязательный, по умолчанию `1`)  
+Таймфрейм свечей:
+- `1`, `3`, `5`, `15`, `30` минут
+- `60`, `120`, `240`, `360`, `720` минут
+- `D` (день), `W` (неделя)
+
+4. `--start` (обязательный)  
+Начало диапазона в UTC. Допустимые форматы:
+- ISO-дата: `2026-04-01`
+- ISO-дата/время: `2026-04-01T00:00:00Z`
+- timestamp в миллисекундах: `1775001600000`
+
+5. `--end` (обязательный)  
+Конец диапазона в UTC, в тех же форматах, что `--start`.
+Важно: верхняя граница не включается (`end` exclusive).  
+Пример: чтобы взять весь день `2026-04-30`, нужно ставить `--end 2026-05-01`.
+
+6. `--out` (обязательный)  
+Куда сохранить CSV, например: `data\ETHUSDT_M1_2026-04.csv`.
+
+7. `--testnet` (опционально, флаг)  
+Использует testnet endpoint Bybit для истории.
+
+Примеры:
+
+```powershell
+# ETHUSDT, 1 минута, весь апрель 2026 (UTC)
+python -m bybit_mt5.cli download --symbol ETHUSDT --category linear --interval 1 --start 2026-04-01 --end 2026-05-01 --out data\ETHUSDT_M1_2026-04.csv
+
+# BTCUSDT spot, 5 минут, неделя
+python -m bybit_mt5.cli download --symbol BTCUSDT --category spot --interval 5 --start 2026-04-01 --end 2026-04-08 --out data\BTCUSDT_SPOT_M5_week.csv
+
+# SOLUSDT linear, часовые свечи, конкретное UTC-время
+python -m bybit_mt5.cli download --symbol SOLUSDT --category linear --interval 60 --start 2026-04-01T00:00:00Z --end 2026-04-15T12:00:00Z --out data\SOLUSDT_H1.csv
+
+# Testnet
+python -m bybit_mt5.cli download --symbol BTCUSDT --category linear --interval 15 --start 2026-04-01 --end 2026-04-03 --out data\BTCUSDT_M15_testnet.csv --testnet
+```
+
+Проверка результата:
+
+```powershell
+Get-Content data\ETHUSDT_M1_2026-04.csv -TotalCount 5
+```
+
+Частые причины, почему данных "мало":
+
+- Неверный `category` для инструмента (`spot` vs `linear`).
+- Неверный символ для выбранного рынка.
+- Диапазон указан не в UTC.
+- Ожидание, что `end` включительный (в нашем CLI он не включается).
+- На стороне биржи нет данных за часть периода для конкретного инструмента.
+
+Технически: Bybit отдает максимум 1000 свечей за один REST-запрос. В CLI это уже обработано пагинацией, поэтому длинные диапазоны (например месяц M1) скачиваются автоматически в несколько запросов.
+
 ## Как открыть скачанную историю в MT5
 
 CSV сам по себе не появится на графике. Его нужно импортировать в custom symbol.
