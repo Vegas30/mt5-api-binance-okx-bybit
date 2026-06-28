@@ -166,8 +166,9 @@ class BybitClient:
             "orderType": signal.order_type,
             "qty": str(signal.qty),
             "timeInForce": signal.time_in_force,
-            "reduceOnly": signal.reduce_only,
         }
+        if signal.category.lower() != "spot" or signal.reduce_only:
+            body["reduceOnly"] = signal.reduce_only
         if signal.price is not None:
             body["price"] = str(signal.price)
 

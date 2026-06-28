@@ -6,6 +6,7 @@ import os
 from .bridge import run_bridge
 from .client import BybitClient, parse_datetime
 from .export import write_mt5_csv
+from .okx_client import OkxClient
 
 
 def main() -> None:
@@ -20,6 +21,13 @@ def main() -> None:
     download.add_argument("--end", required=True, help="UTC ISO date or milliseconds")
     download.add_argument("--out", required=True, help="Output CSV path")
     download.add_argument("--testnet", action="store_true")
+
+    download_okx = subparsers.add_parser("download-okx", help="Download OKX candles and export MT5 CSV")
+    download_okx.add_argument("--inst-id", required=True, help="Example: BTC-USDT or BTC-USDT-SWAP")
+    download_okx.add_argument("--bar", default="1m", help="OKX bar: 1m,3m,5m,15m,30m,1H,2H,4H,6H,12H,1D,1W")
+    download_okx.add_argument("--start", required=True, help="UTC ISO date or milliseconds")
+    download_okx.add_argument("--end", required=True, help="UTC ISO date or milliseconds")
+    download_okx.add_argument("--out", required=True, help="Output CSV path")
 
     serve = subparsers.add_parser("serve", help="Run local MT5 bridge")
     serve.add_argument("--host", default="127.0.0.1")
@@ -42,6 +50,18 @@ def main() -> None:
         print(f"Wrote {len(klines)} bars to {args.out}")
         return
 
+    if args.command == "download-okx":
+        client = OkxClient()
+        klines = client.iter_klines(
+            inst_id=args.inst_id,
+            bar=args.bar,
+            start_ms=parse_datetime(args.start),
+            end_ms=parse_datetime(args.end),
+        )
+        write_mt5_csv(args.out, klines)
+        print(f"Wrote {len(klines)} OKX bars to {args.out}")
+        return
+
     if args.command == "serve":
         client = BybitClient(
             api_key=os.getenv("BYBIT_API_KEY"),
@@ -53,4 +73,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
