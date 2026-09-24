@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bybit Real-Time Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Bybit V5 public WebSocket</p>
+          <h1>Real-Time Market Dashboard</h1>
+        </div>
+        <form id="controls" class="controls">
+          <label>
+            <span>Market</span>
+            <select id="category">
+              <option value="linear" selected>Linear USDT</option>
+              <option value="spot">Spot</option>
+              <option value="inverse">Inverse</option>
+            </select>
+          </label>
+          <label>
+            <span>Symbol</span>
+            <input id="symbol" value="BTCUSDT" autocomplete="off" spellcheck="false">
+          </label>
+          <label>
+            <span>Kline</span>
+            <select id="interval">
+              <option value="1" selected>1m</option>
+              <option value="3">3m</option>
+              <option value="5">5m</option>
+              <option value="15">15m</option>
+              <option value="60">1h</option>
+            </select>
+          </label>
+          <button type="submit">Connect</button>
+        </form>
+      </header>
+
+      <section class="status-row">
+        <div class="status-pill" id="connectionState">
+          <span class="dot"></span>
+          <span>Disconnected</span>
+        </div>
+        <div class="stream-meta">
+          <span id="streamName">-</span>
+          <span id="lastUpdate">No data yet</span>
+        </div>
+      </section>
+
+      <section class="kpis">
+        <article class="metric">
+          <span>Last Price</span>
+          <strong id="lastPrice">-</strong>
+          <small id="priceChange">-</small>
+        </article>
+        <article class="metric">
+          <span>Best Bid / Ask</span>
+          <strong id="bestBidAsk">-</strong>
+          <small id="spread">Spread -</small>
+        </article>
+        <article class="metric">
+          <span>24h Volume</span>
+          <strong id="volume24h">-</strong>
+          <small id="turnover24h">Turnover -</small>
+        </article>
+        <article class="metric">
+          <span>Funding / OI</span>
+          <strong id="funding">-</strong>
+          <small id="openInterest">OI -</small>
+        </article>
+      </section>
+
+      <section class="grid">
+        <section class="panel chart-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Price Stream</h2>
+              <p id="chartHint">Live ticker and kline updates</p>
+            </div>
+            <div class="signal" id="momentumSignal">Neutral</div>
+          </div>
+          <canvas id="priceChart" width="900" height="360"></canvas>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Order Book</h2>
+              <p>Top 20 levels</p>
+            </div>
+            <div class="signal" id="bookSignal">Waiting</div>
+          </div>
+          <div class="book-bars">
+            <div>
+              <span>Bid depth</span>
+              <strong id="bidDepth">-</strong>
+            </div>
+            <div>
+              <span>Ask depth</span>
+              <strong id="askDepth">-</strong>
+            </div>
+            <div>
+              <span>Imbalance</span>
+              <strong id="imbalance">-</strong>
+            </div>
+          </div>
+          <div class="book" id="orderBook"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Public Trades</h2>
+              <p>Latest executions</p>
+            </div>
+            <div class="signal" id="tradeSignal">Waiting</div>
+          </div>
+          <div class="trade-stats">
+            <div><span>Buy flow</span><strong id="buyFlow">-</strong></div>
+            <div><span>Sell flow</span><strong id="sellFlow">-</strong></div>
+            <div><span>Flow delta</span><strong id="flowDelta">-</strong></div>
+          </div>
+          <div class="trades" id="trades"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Signal Inputs</h2>
+              <p>Features useful for price movement models</p>
+            </div>
+          </div>
+          <div class="features" id="features"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

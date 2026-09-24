@@ -11,3 +11,13 @@ tmp*/
 *.log
 
 .build/
+
+.kilo/
+ReportTester-*.html
+ReportTester-*.png
+ReportTester-*.jpg
+near.json
+
+
+
+
