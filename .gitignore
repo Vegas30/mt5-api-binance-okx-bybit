@@ -1,10 +1,13 @@
 __pycache__/
 *.pyc
+
 data/
 test_output/
 tmp*/
 
 *.ex5
 *.mq5
+!mql5/**/*.mq5
 *.log
+
 .build/
