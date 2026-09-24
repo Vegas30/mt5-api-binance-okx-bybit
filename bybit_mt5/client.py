@@ -46,7 +46,7 @@ class BybitClient:
     ) -> list[Kline]:
         params: dict[str, Any] = {
             "category": category,
-            "symbol": symbol.upper(),
+            "symbol": normalize_bybit_symbol(symbol),
             "interval": interval,
             "limit": min(max(limit, 1), 1000),
         }
@@ -71,6 +71,29 @@ class BybitClient:
         ]
         return sorted(klines, key=lambda item: item.start_ms)
 
+    def get_instruments_info(
+        self,
+        category: str,
+        symbol: str | None = None,
+        base_coin: str | None = None,
+        status: str | None = None,
+        limit: int = 500,
+        cursor: str | None = None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {
+            "category": category,
+            "limit": min(max(limit, 1), 1000),
+        }
+        if symbol is not None:
+            params["symbol"] = symbol.upper()
+        if base_coin is not None:
+            params["baseCoin"] = base_coin.upper()
+        if status is not None:
+            params["status"] = status
+        if cursor is not None:
+            params["cursor"] = cursor
+        return self._public_get("/v5/market/instruments-info", params)
+
     def iter_klines(
         self,
         symbol: str,
@@ -79,46 +102,17 @@ class BybitClient:
         start_ms: int,
         end_ms: int,
     ) -> list[Kline]:
-        step_ms = interval_to_milliseconds(interval)
-        cursor = start_ms
-        out: list[Kline] = []
-        seen: set[int] = set()
-
-        while cursor < end_ms:
-            window_end = min(end_ms, cursor + step_ms * 1000)
-            page = self.get_klines(
-                symbol=symbol,
-                interval=interval,
-                category=category,
-                start_ms=cursor,
-                end_ms=window_end - 1,
-                limit=1000,
-            )
-            if not page:
-                cursor = window_end
-                time.sleep(0.05)
-                continue
-
-            max_seen_in_page = cursor
-            for candle in page:
-                if start_ms <= candle.start_ms < end_ms and candle.start_ms not in seen:
-                    seen.add(candle.start_ms)
-                    out.append(candle)
-                if candle.start_ms >= max_seen_in_page:
-                    max_seen_in_page = candle.start_ms
-
-            next_cursor = max_seen_in_page + step_ms
-            if next_cursor <= cursor:
-                cursor = window_end
-            else:
-                cursor = min(next_cursor, window_end)
-            time.sleep(0.05)
-
-            if len(page) < 1000:
-                cursor = window_end
-                continue
-
-        return sorted(out, key=lambda item: item.start_ms)
+        # Bybit returns at most 1000 candles and, for a range larger than that,
+        # the page is the newest part of the requested range.  Paging forward
+        # therefore silently drops the oldest candles in the first request.
+        # Walk backward from end_ms so every page has an unambiguous cursor.
+        return self.iter_klines_backward(
+            symbol=symbol,
+            interval=interval,
+            category=category,
+            start_ms=start_ms,
+            end_ms=end_ms,
+        )
 
     def iter_klines_backward(
         self,
@@ -128,7 +122,6 @@ class BybitClient:
         start_ms: int,
         end_ms: int,
     ) -> list[Kline]:
-        step_ms = interval_to_milliseconds(interval)
         cursor_end = end_ms
         out: list[Kline] = []
         seen: set[int] = set()
@@ -150,7 +143,7 @@ class BybitClient:
                     seen.add(candle.start_ms)
                     out.append(candle)
 
-            next_cursor_end = page[0].start_ms
+            next_cursor_end = min(candle.start_ms for candle in page)
             if next_cursor_end >= cursor_end:
                 break
             cursor_end = max(start_ms, next_cursor_end)
@@ -161,7 +154,7 @@ class BybitClient:
     def place_order(self, signal: Signal) -> dict[str, Any]:
         body: dict[str, Any] = {
             "category": signal.category,
-            "symbol": signal.symbol.upper(),
+            "symbol": normalize_bybit_symbol(signal.symbol),
             "side": normalize_side(signal.side),
             "orderType": signal.order_type,
             "qty": str(signal.qty),
@@ -251,3 +244,10 @@ def normalize_side(value: str) -> str:
     if side in {"sell", "short"}:
         return "Sell"
     raise ValueError("side must be buy/sell/long/short")
+
+
+def normalize_bybit_symbol(value: str) -> str:
+    symbol = value.strip().upper()
+    if symbol.endswith(".P"):
+        return symbol[:-2]
+    return symbol

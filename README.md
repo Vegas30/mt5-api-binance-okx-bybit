@@ -30,6 +30,7 @@ python -m bybit_mt5.cli download --symbol <SYMBOL> --category <CATEGORY> --inter
 
 1. `--symbol` (обязательный)  
 Торговая пара Bybit, обычно без разделителей, например: `BTCUSDT`, `ETHUSDT`, `SOLUSDT`.
+Если у вас MT5-стиль с суффиксом `.P`, например `XAGUSDT.P`, CLI нормализует его в `XAGUSDT`.
 
 2. `--category` (необязательный, по умолчанию `linear`)  
 Тип рынка:
@@ -59,6 +60,14 @@ python -m bybit_mt5.cli download --symbol <SYMBOL> --category <CATEGORY> --inter
 
 7. `--testnet` (опционально, флаг)  
 Использует testnet endpoint Bybit для истории.
+
+Если нужно уточнить точное имя инструмента на Bybit, используйте:
+
+```powershell
+python -m bybit_mt5.cli symbols --category linear --base-coin XAG --status Trading
+```
+
+Для `XAG` это вернёт `XAGUSDT` в категории `linear`.
 
 Примеры:
 
